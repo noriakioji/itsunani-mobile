@@ -2,10 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  Image,
   Alert,
-  ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -19,6 +16,7 @@ import { router, Redirect } from 'expo-router';
 import { registerForPushNotificationsAsync, sendLocalNotification } from '@/lib/notifications';
 import { styles } from './index.styles';
 import { InputContainer } from './components/InputContainer';
+import { Calendar } from './components/Calendar';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -263,36 +261,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Content Area */}
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {!loading && !imageUri && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📅</Text>
-            <Text style={styles.emptyTitle}>Quick Event Capture</Text>
-            <Text style={styles.emptySubtitle}>
-              Type or upload event details to automatically add to your calendar
-            </Text>
-          </View>
-        )}
-
-        {loading && (
-          <View style={styles.loadingContainer}>
-            {imageUri && (
-              <Image source={{ uri: imageUri }} style={styles.imagePreview} />
-            )}
-            {textInput.trim() && !imageUri && (
-              <View style={styles.textPreview}>
-                <Text style={styles.textPreviewContent}>{textInput}</Text>
-              </View>
-            )}
-            <ActivityIndicator size="large" color="#007AFF" style={styles.loader} />
-            <Text style={styles.loadingText}>Processing event...</Text>
-          </View>
-        )}
-      </ScrollView>
+      <Calendar />
 
       {/* Input Area */}
       <InputContainer

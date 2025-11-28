@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
   },
   actionsRow: {
     flexDirection: 'row',

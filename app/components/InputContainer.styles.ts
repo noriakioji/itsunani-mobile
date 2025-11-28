@@ -1,0 +1,96 @@
+import { StyleSheet, Platform } from 'react-native';
+
+export const styles = StyleSheet.create({
+  inputContainer: {
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5E5',
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FA',
+    gap: 8,
+  },
+  actionIcon: {
+    fontSize: 24,
+  },
+  actionLabel: {
+    fontSize: 11,
+    color: '#666',
+    fontWeight: '500',
+  },
+  selectedImageContainer: {
+    position: 'relative',
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  selectedImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#F0F0F0',
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: 8,
+    right: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 12,
+    gap: 8,
+  },
+  textInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 100,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 16,
+    color: '#000',
+  },
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#D0D0D0',
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '600',
+  },
+});

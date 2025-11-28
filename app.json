@@ -25,12 +25,20 @@
       "package": "com.yourname.itsunani",
       "permissions": [
         "android.permission.CAMERA",
-        "android.permission.READ_MEDIA_IMAGES"
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
+    },
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#007AFF",
+      "iosDisplayInForeground": true,
+      "androidMode": "default",
+      "androidCollapsedTitle": "New event added"
     },
     "plugins": [
       "expo-router",
@@ -45,10 +53,24 @@
         {
           "photosPermission": "Allow Itsunani to access your photos to extract events"
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#007AFF"
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cae7ac2a-74f1-413c-8d6a-52707063085a"
+      }
+    },
+    "owner": "noriakioji"
   }
 }

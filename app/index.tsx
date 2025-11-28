@@ -1,23 +1,24 @@
-// itsunani-mobile/app/index.tsx
-import { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  Image, 
-  Alert, 
-  StyleSheet, 
+import { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  Image,
+  Alert,
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
   Keyboard,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as Notifications from 'expo-notifications';
 import { supabase } from '@/lib/supabase';
 import * as SecureStore from 'expo-secure-store';
 import { router, Redirect } from 'expo-router';
+import { registerForPushNotificationsAsync, sendLocalNotification } from '@/lib/notifications';
+import { styles } from './index.styles';
+import { InputContainer } from './components/InputContainer';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -30,9 +31,34 @@ export default function HomeScreen() {
   const [remainingQuota, setRemainingQuota] = useState<number | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
 
   useEffect(() => {
     checkSession();
+    
+    // Register for push notifications (permissions only)
+    registerForPushNotificationsAsync();
+
+    // Listener for notifications received while app is in foreground
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('Notification received:', notification);
+    });
+
+    // Listener for when user taps on notification
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('Notification tapped:', response);
+    });
+
+    return () => {
+      // Use remove() method on the subscription object
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
   }, []);
 
   const checkSession = async () => {
@@ -190,9 +216,13 @@ export default function HomeScreen() {
 
       console.log('✅ Saved to calendar');
 
-      Alert.alert(
-        '✅ Event Saved!',
-        `"${extractData.event.title}" has been added to your Google Calendar.\n\n${extractData.remainingQuota} extractions remaining.`
+      // Send push notification
+      const eventTitle = extractData.event.title;
+      const eventDate = new Date(extractData.event.startDate).toLocaleDateString();
+      
+      await sendLocalNotification(
+        '✅ Event Added!',
+        `"${eventTitle}" on ${eventDate} has been added to your calendar`
       );
 
       setTextInput('');
@@ -225,8 +255,7 @@ export default function HomeScreen() {
         <TouchableOpacity onPress={() => router.push('/settings')}>
           <Text style={styles.settingsIcon}>⚙️</Text>
         </TouchableOpacity>
-        <Text style={styles.appName}>Itsunani</Text>
-        {remainingQuota !== null && (
+        {remainingQuota !== null && remainingQuota < 10 && (
           <View style={styles.quotaBadge}>
             <Text style={styles.quotaText}>{remainingQuota} left</Text>
           </View>
@@ -266,252 +295,17 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Input Area */}
-      <View style={styles.inputContainer}>
-        {/* Action Buttons Row */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={takePhoto}
-            disabled={loading}
-          >
-            <Text style={styles.actionIcon}>📸</Text>
-            <Text style={styles.actionLabel}>Photo</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={pickImage}
-            disabled={loading}
-          >
-            <Text style={styles.actionIcon}>🖼️</Text>
-            <Text style={styles.actionLabel}>Upload</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Image Preview (if selected) */}
-        {imageUri && !loading && (
-          <View style={styles.selectedImageContainer}>
-            <Image source={{ uri: imageUri }} style={styles.selectedImage} />
-            <TouchableOpacity 
-              style={styles.removeImageButton} 
-              onPress={clearImage}
-            >
-              <Text style={styles.removeImageText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Input Row */}
-        <View style={styles.inputRow}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Describe the event..."
-            placeholderTextColor="#999"
-            value={textInput}
-            onChangeText={setTextInput}
-            multiline
-            maxLength={500}
-            editable={!loading}
-          />
-
-          <TouchableOpacity 
-            style={[styles.sendButton, !canSend && styles.sendButtonDisabled]} 
-            onPress={handleSend}
-            disabled={!canSend}
-          >
-            <Text style={styles.sendButtonText}>↑</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <InputContainer
+        textInput={textInput}
+        onChangeText={setTextInput}
+        imageUri={imageUri}
+        loading={loading}
+        canSend={canSend}
+        onTakePhoto={takePhoto}
+        onPickImage={pickImage}
+        onClearImage={clearImage}
+        onSend={handleSend}
+      />
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F9FA',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  settingsIcon: {
-    fontSize: 24,
-  },
-  appName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  quotaBadge: {
-    backgroundColor: '#FF3B30',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  quotaText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#000',
-    marginBottom: 12,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
-    maxWidth: 320,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  imagePreview: {
-    width: '100%',
-    height: 300,
-    resizeMode: 'contain',
-    borderRadius: 12,
-    backgroundColor: '#fff',
-    marginBottom: 20,
-  },
-  textPreview: {
-    width: '100%',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  textPreviewContent: {
-    fontSize: 16,
-    color: '#000',
-    lineHeight: 24,
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 10,
-  },
-  inputContainer: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 8,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-    backgroundColor: '#F8F9FA',
-  },
-  actionIcon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  actionLabel: {
-    fontSize: 11,
-    color: '#666',
-    fontWeight: '500',
-  },
-  selectedImageContainer: {
-    position: 'relative',
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-  selectedImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    backgroundColor: '#F0F0F0',
-  },
-  removeImageButton: {
-    position: 'absolute',
-    top: 8,
-    right: 20,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  removeImageText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
-    gap: 8,
-  },
-  textInput: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 100,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#000',
-  },
-  sendButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#007AFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonDisabled: {
-    backgroundColor: '#D0D0D0',
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: '600',
-  },
-});
